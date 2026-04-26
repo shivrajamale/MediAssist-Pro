@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MediAssist Pro - AI Medical Chatbot</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+<div class="bg-aurora"></div>
+<div class="bg-grid"></div>
+
+<main class="app">
+
+<!-- ✅ FIXED SECTION -->
+<section class="hero">
+<h1>MediAssist Pro</h1>
+
+<p class="subtitle">
+Professional AI assistant for symptom guidance, medication basics,
+and patient education.
+</p>
+
+<div class="meta-grid">
+
+<article class="meta-card">
+<h2>Clinical Scope</h2>
+<p>General health guidance, triage support, and wellness education.</p>
+</article>
+
+<article class="meta-card">
+<h2>Patient Safety</h2>
+<p>Escalates urgent signs and recommends emergency care when needed.</p>
+</article>
+
+<article class="meta-card">
+<h2>Documentation</h2>
+<p>Structured responses with clear next steps and caution alerts.</p>
+</article>
+
+<article class="meta-card solution-card">
+<h2>Recommended Solutions</h2>
+<ul>
+<li>Home care plan with hydration, rest, and monitoring.</li>
+<li>Medicine and dosage safety reminders.</li>
+<li>Clear escalation rule for clinic vs emergency care.</li>
+</ul>
+</article>
+
+</div>
+</section>
+
+<!-- CHAT SECTION -->
+<section class="chat-shell chat-closed" id="chatShell">
+
+<header class="chat-header">
+<div>
+<h3>Virtual Care Assistant</h3>
+<p>For educational support only. Not a medical diagnosis.</p>
+</div>
+<span class="status">Online</span>
+</header>
+
+<div class="quick-actions">
+<button class="quick-btn" data-prompt="fever">Fever</button>
+<button class="quick-btn" data-prompt="common cold">Common Cold</button>
+<button class="quick-btn" data-prompt="dengue">Dengue Fever</button>
+<button class="quick-btn" data-prompt="malaria">Malaria</button>
+<button class="quick-btn" data-prompt="typhoid">Typhoid Fever</button>
+<button class="quick-btn" data-prompt="food poisoning">Food Poisoning</button>
+<button class="quick-btn" data-prompt="headache">Headache</button>
+</div>
+
+<div class="chat-messages" id="chatMessages">
+
+<article class="message assistant">
+<h4>MediAssist Pro</h4>
+<p>
+Hello, I am your medical support assistant. Share your symptoms,
+duration, and current medications.
+</p>
+</article>
+
+</div>
+
+<!-- SELECTION -->
+<div class="selection-actions hidden" id="selectionActions">
+
+<div class="selection-row hidden" id="severityRow">
+<span>Severity:</span>
+<button class="select-btn" data-prompt="mild">Mild</button>
+<button class="select-btn" data-prompt="moderate">Moderate</button>
+<button class="select-btn" data-prompt="high">High</button>
+</div>
+
+<div class="selection-row hidden" id="typeRow">
+<span>Type:</span>
+<button class="select-btn" data-prompt="viral">Viral</button>
+<button class="select-btn" data-prompt="bacterial">Bacterial</button>
+<button class="select-btn" data-prompt="parasitic">Parasitic</button>
+<button class="select-btn" data-prompt="unknown">Unknown</button>
+</div>
+
+</div>
+
+<!-- INPUT -->
+<form id="chatForm" class="chat-input">
+<input
+id="userInput"
+type="text"
+placeholder="Describe your symptoms..."
+required
+/>
+<button type="submit">Send</button>
+</form>
+
+</section>
+
+</main>
+
+<!-- ROBOT BUTTON -->
+<button id="robotLauncher" class="robot-launcher">
+🤖 Medical Bot
+</button>
+
+<script src="app.js"></script>
+
+</body>
+</html>
