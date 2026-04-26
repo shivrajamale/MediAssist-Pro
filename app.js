@@ -11,7 +11,8 @@ const chatShell = document.getElementById("chatShell");
 
 let pendingDisease = null;
 let pendingSeverity = null;
-let activeDisease = null;
+let userName = null;
+let userAge = null;
 
 /* ---------------- DETECT FUNCTIONS ---------------- */
 
@@ -254,8 +255,11 @@ function medicinePlan(disease, severity, type) {
   }
 
   const tabletList = info.tablets.map(t => `  • ${t}`).join("\n");
+  const patientName = userName ? userName : "Patient";
+  const patientAge = userAge ? `${userAge} yrs` : "N/A";
 
   return `━━━ ${disease} Report ━━━\n\n` +
+    `👤 Patient: ${patientName} (Age: ${patientAge})\n` +
     `🔹 Severity: ${severity.toUpperCase()}\n` +
     `🔹 Type: ${type}\n\n` +
     `💊 Suggested Tablets:\n${tabletList}\n\n` +
@@ -283,9 +287,55 @@ function detectFarewell(msg) {
 function medicalReply(input) {
   const msg = input.toLowerCase().trim();
 
+  // Ask for name first
+  if (!userName) {
+    if (detectGreeting(msg)) {
+      return "Hello! I am your medical support assistant. Could you please tell me your name?";
+    }
+
+    const disease = detectDisease(msg);
+    if (disease && !pendingDisease) {
+      pendingDisease = disease;
+      return `Before we proceed with ${disease}, could you please tell me your name for the medical report?`;
+    }
+
+    let name = input.trim();
+    if (name.toLowerCase().startsWith("my name is ")) name = name.substring(11).trim();
+    else if (name.toLowerCase().startsWith("i am ")) name = name.substring(5).trim();
+    else if (name.toLowerCase().startsWith("i'm ")) name = name.substring(4).trim();
+    
+    userName = name.charAt(0).toUpperCase() + name.slice(1);
+
+    return `Nice to meet you, ${userName}! Could you also tell me your age?`;
+  }
+
+  // Ask for age
+  if (!userAge) {
+    const disease = detectDisease(msg);
+    if (disease && !pendingDisease) {
+      pendingDisease = disease;
+      return `Got it. But before we proceed with ${disease}, could you please tell me your age?`;
+    }
+
+    let ageMatch = input.match(/\d+/);
+    if (ageMatch) {
+      userAge = ageMatch[0];
+    } else {
+      return "Please enter a valid age as a number (e.g., 25).";
+    }
+
+    if (pendingDisease) {
+      const d = pendingDisease;
+      showSeverityRow();
+      return `Thank you! Let's continue with ${d}.\nStep 2: Choose severity below (Mild / Moderate / High)`;
+    }
+
+    return `Thank you! 👋\n\nI can help you with basic medicine guidance for common illnesses. What are your symptoms today? You can type a disease (like Fever, Cold) or select from the buttons above.`;
+  }
+
   // Greeting — respond warmly
   if (detectGreeting(msg)) {
-    return `👋 Hello! Welcome to MediAssist Pro.\n\nI'm your virtual health assistant. I can help you with basic medicine guidance for common illnesses.\n\n🩺 How to use:\n  1. Select a disease (Fever, Cold, Dengue...)\n  2. Choose severity (Mild / Moderate / High)\n  3. Choose type (Viral / Bacterial / Parasitic)\n\nI'll suggest basic tablets, home care tips, and warning signs.\n\n💬 Go ahead — click a disease button above or type one!`;
+    return `👋 Hello again, ${userName}! Welcome to MediAssist Pro.\n\nI'm your virtual health assistant. I can help you with basic medicine guidance for common illnesses.\n\n🩺 How to use:\n  1. Select a disease (Fever, Cold, Dengue...)\n  2. Choose severity (Mild / Moderate / High)\n  3. Choose type (Viral / Bacterial / Parasitic)\n\nI'll suggest basic tablets, home care tips, and warning signs.\n\n💬 Go ahead — click a disease button above or type one!`;
   }
 
   // Farewell — respond nicely
@@ -293,7 +343,7 @@ function medicalReply(input) {
     hideAllSelections();
     pendingDisease = null;
     pendingSeverity = null;
-    return `😊 Thank you for using MediAssist Pro!\n\n🙏 Stay healthy and take care.\n\n📌 Remember: Always consult a real doctor for proper diagnosis and treatment.\n\n👋 Goodbye! Feel free to come back anytime.`;
+    return `😊 Thank you for using MediAssist Pro, ${userName}!\n\n🙏 Stay healthy and take care.\n\n📌 Remember: Always consult a real doctor for proper diagnosis and treatment.\n\n👋 Goodbye! Feel free to come back anytime.`;
   }
 
   const disease = detectDisease(msg);
