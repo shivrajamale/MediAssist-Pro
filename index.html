@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="styles.css?v=2" />
+<link rel="stylesheet" href="styles.css?v=10" />
 </head>
 
 <body>
@@ -83,8 +83,8 @@ and patient education.
 <article class="message assistant">
 <h4>MediAssist Pro</h4>
 <p>
-Hello! I am MediAssist Pro, your virtual medical assistant.
-Before we begin, could you please tell me your name?
+Hello! I am MediAssist Pro, your virtual medical assistant.<br>
+How can I help you today? (You can type your symptoms like "fever" or "headache")
 </p>
 </article>
 
@@ -98,14 +98,6 @@ Before we begin, could you please tell me your name?
 <button class="select-btn" data-prompt="mild">Mild</button>
 <button class="select-btn" data-prompt="moderate">Moderate</button>
 <button class="select-btn" data-prompt="high">High</button>
-</div>
-
-<div class="selection-row hidden" id="typeRow">
-<span>Type:</span>
-<button class="select-btn" data-prompt="viral">Viral</button>
-<button class="select-btn" data-prompt="bacterial">Bacterial</button>
-<button class="select-btn" data-prompt="parasitic">Parasitic</button>
-<button class="select-btn" data-prompt="unknown">Unknown</button>
 </div>
 
 </div>
@@ -123,6 +115,36 @@ required
 
 </section>
 
+<!-- REPORT BOT SHELL -->
+<section class="chat-shell hidden" id="reportShell">
+  <header class="chat-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+    <div class="header-content">
+      <div class="bot-info">
+        <div class="bot-icon-wrapper" style="font-size: 1.5rem;">📄</div>
+        <div class="bot-name">
+          <h2>Report Analyzer</h2>
+          <span class="status">AI Beta</span>
+        </div>
+      </div>
+      <button class="close-btn" id="closeReportBtn" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+  </header>
+
+  <section class="chat-messages" id="reportMessages" style="flex: 1; overflow-y: auto;">
+    <article class="message assistant">
+      <h4>Report Bot</h4>
+      <p>Hello! Upload a picture of your Blood Report (e.g. CBC, LFT, Sugar Test) and I will analyze the values to suggest a care plan.</p>
+    </article>
+  </section>
+
+  <section class="chat-input-area">
+    <form id="reportForm" class="chat-input">
+      <input type="file" id="reportUpload" accept="image/*" required style="width: 100%; border: none; padding: 0.5rem; background: transparent;" />
+      <button type="submit" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%);">Scan</button>
+    </form>
+  </section>
+</section>
+
 </main>
 
 <!-- ROBOT BUTTON -->
@@ -130,7 +152,14 @@ required
 🤖 Medical Bot
 </button>
 
-<script src="app.js?v=2"></script>
+<!-- REPORT BOT LAUNCHER -->
+<button id="reportLauncher" class="robot-launcher" style="right: 220px; background: linear-gradient(180deg, #10b981 0%, #059669 100%);">
+📄 Report Bot
+</button>
+
+<!-- Moved report shell inside main app -->
+
+<script src="app.js?v=10"></script>
 
 </body>
 </html>

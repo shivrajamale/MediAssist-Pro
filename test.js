@@ -1,24 +1,17 @@
-const chatMessages = document.getElementById("chatMessages");
-const chatForm = document.getElementById("chatForm");
-const userInput = document.getElementById("userInput");
-const quickButtons = document.querySelectorAll(".quick-btn");
-const selectionButtons = document.querySelectorAll(".select-btn");
-const severityRow = document.getElementById("severityRow");
-const robotLauncher = document.getElementById("robotLauncher");
-const chatShell = document.getElementById("chatShell");
-
-// Report Bot Elements
-const reportLauncher = document.getElementById("reportLauncher");
-const reportShell = document.getElementById("reportShell");
-const closeReportBtn = document.getElementById("closeReportBtn");
-const reportForm = document.getElementById("reportForm");
-const reportUpload = document.getElementById("reportUpload");
-const reportMessages = document.getElementById("reportMessages");
+const chatMessages = { appendChild: () => {}, querySelectorAll: () => [] };
+const chatForm = {};
+const userInput = {};
+const quickButtons = [];
+const selectionButtons = [];
+const selectionActions = { classList: { add: () => {}, remove: () => {} } };
+const severityRow = { classList: { add: () => {}, remove: () => {} } };
+const typeRow = { classList: { add: () => {}, remove: () => {} } };
+const robotLauncher = {};
+const chatShell = {};
 
 let pendingDisease = null;
 let pendingSeverity = null;
 let userName = null;
-let isAskingForName = false;
 let userAge = null;
 let userAllergies = null;
 let userCurrentMeds = null;
@@ -106,50 +99,6 @@ const symptomDB = {
   "Fever": {
     symptoms: ["fever", "high temperature", "chills", "body heating"],
     baseRisk: "Moderate"
-  },
-  "Chikungunya": {
-    symptoms: ["fever", "severe joint pain", "muscle pain", "headache", "nausea", "fatigue", "rash"],
-    baseRisk: "Moderate"
-  },
-  "Jaundice (Hepatitis)": {
-    symptoms: ["yellow skin", "yellow eyes", "dark urine", "fatigue", "abdominal pain", "nausea", "vomiting", "loss of appetite"],
-    baseRisk: "High"
-  },
-  "COVID-19": {
-    symptoms: ["fever", "dry cough", "loss of taste", "loss of smell", "difficulty breathing", "body ache", "sore throat", "fatigue"],
-    baseRisk: "High"
-  },
-  "Tuberculosis (TB)": {
-    symptoms: ["persistent cough", "chest pain", "weight loss", "night sweats", "blood in cough", "fever", "fatigue"],
-    baseRisk: "High"
-  },
-  "Asthma": {
-    symptoms: ["wheezing", "shortness of breath", "chest tightness", "coughing", "breathing issue"],
-    baseRisk: "Moderate"
-  },
-  "Viral Gastroenteritis (Stomach Flu)": {
-    symptoms: ["watery diarrhea", "abdominal cramps", "stomach pain", "nausea", "vomiting", "fever", "loose motion"],
-    baseRisk: "Moderate"
-  },
-  "Anemia": {
-    symptoms: ["fatigue", "weakness", "pale skin", "shortness of breath", "dizziness", "cold hands"],
-    baseRisk: "Mild"
-  },
-  "Acidity (GERD)": {
-    symptoms: ["heartburn", "chest burning", "acid reflux", "stomach gas", "bloating", "burping", "sour taste", "stomach pain", "gas"],
-    baseRisk: "Mild"
-  },
-  "Migraine": {
-    symptoms: ["severe headache", "throbbing pain", "nausea", "vomiting", "sensitivity to light", "sensitivity to sound", "half side headache"],
-    baseRisk: "Moderate"
-  },
-  "Diabetes (High Sugar)": {
-    symptoms: ["frequent urination", "excessive thirst", "extreme hunger", "unexplained weight loss", "fatigue", "blurred vision", "slow healing wounds"],
-    baseRisk: "Moderate"
-  },
-  "Hypertension (High BP)": {
-    symptoms: ["severe headache", "dizziness", "shortness of breath", "nosebleeds", "chest pain", "blurring of vision", "palpitations"],
-    baseRisk: "High"
   }
 };
 
@@ -179,11 +128,6 @@ function smartSymptomChecker(msg) {
       const topDisease = sortedDiseases[0];
       const riskLevel = symptomDB[topDisease].baseRisk;
       
-      let clearWinner = true;
-      if (sortedDiseases.length > 1 && diseaseScores[sortedDiseases[0]] === diseaseScores[sortedDiseases[1]]) {
-        clearWinner = false;
-      }
-      
       let reply = `🧠 Smart Analysis:\n\n`;
       reply += `📝 Detected Symptoms: ${matchedSymptoms.join(", ")}\n`;
       reply += `🩺 Possible Diseases:\n`;
@@ -194,18 +138,12 @@ function smartSymptomChecker(msg) {
       });
       
       reply += `\n⚠️ General Risk Level: ${riskLevel}\n\n`;
-      
-      let topToConfirm = null;
-      if (clearWinner) {
-        reply += `Would you like a care plan for ${topDisease}? (Type 'Yes' to continue, or type another disease name)`;
-        topToConfirm = topDisease;
-      } else {
-        reply += `There are multiple possibilities. Which disease would you like a care plan for? (Type the name from the list above)`;
-      }
+      reply += `Would you like a care plan for ${topDisease}? (Type 'Yes' to continue, or select a specific disease above)`;
 
       matchedSymptoms.forEach(s => chatMemory.rememberSymptom(s));
-      
-      return { topDisease: topToConfirm, reply };
+      chatMemory.rememberDisease(topDisease);
+
+      return { topDisease, reply };
     }
   }
   return null;
@@ -250,11 +188,19 @@ function clearChat() {
 function hideAllSelections() {
   selectionActions.classList.add("hidden");
   severityRow.classList.add("hidden");
+  typeRow.classList.add("hidden");
 }
 
 function showSeverityRow() {
   selectionActions.classList.remove("hidden");
   severityRow.classList.remove("hidden");
+  typeRow.classList.add("hidden");
+}
+
+function showTypeRow() {
+  selectionActions.classList.remove("hidden");
+  severityRow.classList.add("hidden");
+  typeRow.classList.remove("hidden");
 }
 
 /* ---------------- MEDICINE DATABASE ---------------- */
@@ -395,199 +341,16 @@ const medicineDB = {
       homeCare: "Hospital evaluation needed for severe unexplained weakness",
       warning: "⚠️ SEEK MEDICAL HELP if fainting, rapid heartbeat, or breathlessness"
     }
-  },
-  "Chikungunya": {
-    mild: {
-      tablets: ["Paracetamol (Dolo 650) – for fever and pain", "⛔ Do NOT take Aspirin or Ibuprofen until Dengue is ruled out"],
-      homeCare: "Complete bed rest, drink plenty of fluids, apply cold pack to joints",
-      warning: "Joint pain may persist for months. Visit doctor for blood test"
-    },
-    moderate: {
-      tablets: ["Paracetamol – every 6 hrs", "Aceclofenac / Ibuprofen – ONLY if Dengue is negative and prescribed by doctor"],
-      homeCare: "Light exercise for joint stiffness, hydration (coconut water, ORS)",
-      warning: "Visit doctor if fever lasts more than 5 days or severe joint pain"
-    },
-    high: {
-      tablets: ["Strong NSAIDs or Corticosteroids – strictly via doctor prescription"],
-      homeCare: "Hospital or clinic visit required for pain management",
-      warning: "⚠️ SEEK MEDICAL HELP if unable to walk or intense swelling"
-    }
-  },
-  "Jaundice (Hepatitis)": {
-    mild: {
-      tablets: ["Liv.52 / Udiliv – liver support (consult doctor)", "B-Complex vitamins"],
-      homeCare: "Strict boiled water, sugarcane juice, very low fat diet (no oil/spices), complete rest",
-      warning: "Requires LFT blood test. Do NOT self-medicate with painkillers"
-    },
-    moderate: {
-      tablets: ["Ursodeoxycholic acid – as prescribed", "Vitamin supplements"],
-      homeCare: "Zero fat diet, high carb diet, adequate hydration",
-      warning: "Visit doctor. Monitor yellowing of eyes"
-    },
-    high: {
-      tablets: ["IV fluids – hospital setting", "Anti-viral therapy – if Hepatitis B/C"],
-      homeCare: "Hospital admission usually required",
-      warning: "⚠️ EMERGENCY: Seek hospital immediately if severe vomiting, confusion, or severe abdominal pain"
-    }
-  },
-  "COVID-19": {
-    mild: {
-      tablets: ["Paracetamol – for fever", "Cetirizine – for runny nose", "Vitamin C (Limcee) & Zinc – for immunity"],
-      homeCare: "Isolate in a separate room, wear mask, monitor oxygen levels with pulse oximeter",
-      warning: "Visit doctor if SpO2 drops below 94%"
-    },
-    moderate: {
-      tablets: ["Paracetamol", "Inhalers – if prescribed", "Cough syrup"],
-      homeCare: "Proning position to improve oxygen, breathing exercises",
-      warning: "⚠️ Visit hospital if difficulty breathing or chest tightness"
-    },
-    high: {
-      tablets: ["Steroids / Antivirals – strictly hospital setting", "Oxygen therapy"],
-      homeCare: "Emergency hospitalization required",
-      warning: "⚠️ EMERGENCY: Call ambulance immediately for breathing failure"
-    }
-  },
-  "Tuberculosis (TB)": {
-    mild: {
-      tablets: ["AKT-4 (Anti-TB drugs) – MUST consult DOTS center / Doctor", "Vitamin B6"],
-      homeCare: "High protein diet, cover mouth while coughing, well-ventilated room",
-      warning: "TB requires 6 months strict treatment. Do not skip medicines"
-    },
-    moderate: {
-      tablets: ["Strict DOTS therapy – as prescribed", "Cough suppressants if advised"],
-      homeCare: "Rest, nutritious diet (eggs, milk, pulses)",
-      warning: "Visit doctor immediately. Sputum test is mandatory"
-    },
-    high: {
-      tablets: ["Hospital supervised TB therapy"],
-      homeCare: "Hospital admission for severe lung involvement",
-      warning: "⚠️ EMERGENCY: Seek hospital immediately if coughing massive amounts of blood"
-    }
-  },
-  "Asthma": {
-    mild: {
-      tablets: ["Salbutamol inhaler (Asthalin) – 1-2 puffs as needed", "Levocetirizine – for allergies"],
-      homeCare: "Avoid dust, smoke, and cold air. Keep inhaler handy",
-      warning: "Visit doctor if you need inhaler more than twice a week"
-    },
-    moderate: {
-      tablets: ["Corticosteroid inhaler (Budecort) – as prescribed", "Montelukast tablet – daily at night"],
-      homeCare: "Use spacer with inhaler, breathing exercises",
-      warning: "Visit doctor to adjust inhaler dosage"
-    },
-    high: {
-      tablets: ["Nebulization – clinic/hospital setting", "Oral steroids – emergency only"],
-      homeCare: "Sit upright, stay calm, take rescue inhaler",
-      warning: "⚠️ EMERGENCY: Seek hospital immediately if inhaler is not working and lips turn blue"
-    }
-  },
-  "Viral Gastroenteritis (Stomach Flu)": {
-    mild: {
-      tablets: ["ORS sachets – sip continuously", "Probiotics (Enterogermina)"],
-      homeCare: "Clear liquids, BRAT diet, ginger tea for nausea",
-      warning: "Avoid antibiotics as it's viral. Monitor hydration"
-    },
-    moderate: {
-      tablets: ["Ondem 4mg – for vomiting", "Racecadotril – for severe loose motion", "ORS sachets"],
-      homeCare: "Rest, electrolyte drinks, avoid milk and spicy food",
-      warning: "Visit doctor if no urination for 8 hours"
-    },
-    high: {
-      tablets: ["IV fluids – hospital setting"],
-      homeCare: "Hospital admission needed for severe dehydration",
-      warning: "⚠️ EMERGENCY: Seek hospital if extreme weakness, dizziness, or blood in stool"
-    }
-  },
-  "Anemia": {
-    mild: {
-      tablets: ["Iron + Folic Acid tablet – once daily after food", "Vitamin C – to boost iron absorption"],
-      homeCare: "Eat iron-rich foods: spinach, dates, jaggery, beetroot, meat",
-      warning: "Get a CBC test done to confirm hemoglobin levels"
-    },
-    moderate: {
-      tablets: ["Ferrous Ascorbate / Ferrous Sulphate – as prescribed", "Vitamin B12 supplements"],
-      homeCare: "Dietary changes, avoid tea/coffee with meals",
-      warning: "Consult doctor for exact dosage and cause of anemia"
-    },
-    high: {
-      tablets: ["Iron injections or IV infusions", "Blood transfusion – if hemoglobin dangerously low"],
-      homeCare: "Requires hospital or clinic procedure",
-      warning: "⚠️ SEEK MEDICAL HELP if fainting, rapid heartbeat, or extreme breathlessness"
-    }
-  },
-  "Acidity (GERD)": {
-    general: {
-      tablets: ["Pantoprazole 40mg (Pan-D) – empty stomach in morning", "Antacid syrup (Digene) – 2 tsp for instant relief"],
-      homeCare: "Avoid spicy/oily food, elevate head while sleeping, don't lie down immediately after eating, drink cold milk",
-      warning: "⚠️ EMERGENCY: If severe chest pain radiates to arm/jaw, seek hospital immediately (can mimic heart attack)!"
-    }
-  },
-  "Migraine": {
-    mild: {
-      tablets: ["Paracetamol 650mg – early stage", "Ibuprofen 400mg – with food"],
-      homeCare: "Rest in a dark, quiet room, apply cold compress to forehead, drink coffee/tea",
-      warning: "Identify and avoid your migraine triggers (e.g., strong smells, bright lights)."
-    },
-    moderate: {
-      tablets: ["Naproxen 500mg – as prescribed", "Domperidone 10mg – if vomiting/nausea"],
-      homeCare: "Sleep for 7-8 hours, stay hydrated, avoid screen time completely",
-      warning: "Visit doctor if migraines occur more than 4 times a month."
-    },
-    high: {
-      tablets: ["Sumatriptan 50mg / Rizatriptan – strictly via prescription", "Anti-emetics for severe vomiting"],
-      homeCare: "Strict bed rest in complete darkness",
-      warning: "⚠️ EMERGENCY: Seek hospital if sudden 'worst headache of your life' (thunderclap headache)."
-    }
-  },
-  "Diabetes (High Sugar)": {
-    general: {
-      tablets: ["Prescription anti-diabetic medications only (Metformin, etc.)", "⛔ No over-the-counter medicine recommended"],
-      homeCare: "Strict diabetic diet, stop sugar intake, daily 30-min walk, complex carbs (oats, millets)",
-      warning: "⚠️ EMERGENCY: Seek hospital if sweet-smelling breath, extreme confusion, or weakness. Get HbA1c test done."
-    }
-  },
-  "Hypertension (High BP)": {
-    general: {
-      tablets: ["Amlodipine / Telmisartan – strictly as prescribed by doctor", "⛔ Never skip your prescribed BP medicine"],
-      homeCare: "Strict low-sodium (salt) diet, brisk walking, reduce stress, avoid alcohol",
-      warning: "⚠️ EMERGENCY: Seek hospital immediately if BP > 180/120, severe headache, or chest pain."
-    }
   }
-};
-
-/* ---------------- FLOW CATEGORIES ---------------- */
-const categoryDirect = ["Acidity (GERD)", "Diabetes (High Sugar)", "Hypertension (High BP)"];
-
-const diseasePathogen = {
-  "Fever": "Viral or Bacterial (Requires test)",
-  "Common Cold": "Viral Infection",
-  "Dengue Fever": "Viral Infection (Mosquito-borne)",
-  "Malaria": "Parasitic Infection (Mosquito-borne)",
-  "Typhoid Fever": "Bacterial Infection",
-  "Food Poisoning": "Mostly Bacterial",
-  "Headache": "Non-Infectious (Symptom)",
-  "Weakness": "Non-Infectious (Symptom/Deficiency)",
-  "Chikungunya": "Viral Infection (Mosquito-borne)",
-  "Jaundice (Hepatitis)": "Viral Infection",
-  "COVID-19": "Viral Infection",
-  "Tuberculosis (TB)": "Bacterial Infection",
-  "Asthma": "Non-Infectious (Respiratory)",
-  "Viral Gastroenteritis (Stomach Flu)": "Viral Infection",
-  "Anemia": "Non-Infectious (Nutritional/Blood)",
-  "Acidity (GERD)": "Non-Infectious (Digestive/Lifestyle)",
-  "Migraine": "Non-Infectious (Neurological)",
-  "Diabetes (High Sugar)": "Non-Infectious (Metabolic)",
-  "Hypertension (High BP)": "Non-Infectious (Cardiovascular)"
 };
 
 /* ---------------- CHAT LOGIC ---------------- */
 
-function medicinePlan(disease, severity) {
+function medicinePlan(disease, severity, type) {
   const info = medicineDB[disease]?.[severity];
-  const cause = diseasePathogen[disease] || "Unknown";
 
   if (!info) {
-    return `Assessment: ${disease} (${severity})\nProbable Cause: ${cause}\nSolution: Rest + Hydration\nTablet: Consult doctor before taking medicines\nNext Step: Monitor symptoms for 2-3 days`;
+    return `Assessment: ${disease} (${severity}, ${type})\nSolution: Rest + Hydration\nTablet: Consult doctor before taking medicines\nNext Step: Monitor symptoms for 2-3 days`;
   }
 
   const tabletList = info.tablets.map(t => {
@@ -621,7 +384,7 @@ function medicinePlan(disease, severity) {
     `👤 Patient: ${patientName} (Age: ${patientAge})\n` +
     `⚠️ Allergies: ${allergies} | 💊 Current Meds: ${currentMeds}\n` +
     `🔹 Severity: ${severity.toUpperCase()}\n` +
-    `🦠 Probable Cause: ${cause}\n\n` +
+    `🔹 Type: ${type}\n\n` +
     `💊 Suggested Tablets:\n${tabletList}\n\n` +
     `🏠 Home Care:\n  ${info.homeCare}\n\n` +
     `⚠️ Warning:\n  ${info.warning}\n\n` +
@@ -638,29 +401,7 @@ function detectDisease(msg) {
     typhoid: "Typhoid Fever",
     "food poisoning": "Food Poisoning",
     headache: "Headache",
-    weakness: "Weakness",
-    chikungunya: "Chikungunya",
-    jaundice: "Jaundice (Hepatitis)",
-    hepatitis: "Jaundice (Hepatitis)",
-    covid: "COVID-19",
-    corona: "COVID-19",
-    tb: "Tuberculosis (TB)",
-    tuberculosis: "Tuberculosis (TB)",
-    asthma: "Asthma",
-    "stomach flu": "Viral Gastroenteritis (Stomach Flu)",
-    gastroenteritis: "Viral Gastroenteritis (Stomach Flu)",
-    anemia: "Anemia",
-    acidity: "Acidity (GERD)",
-    gas: "Acidity (GERD)",
-    gerd: "Acidity (GERD)",
-    heartburn: "Acidity (GERD)",
-    migraine: "Migraine",
-    diabetes: "Diabetes (High Sugar)",
-    sugar: "Diabetes (High Sugar)",
-    hypertension: "Hypertension (High BP)",
-    bp: "Hypertension (High BP)",
-    "high bp": "Hypertension (High BP)",
-    "blood pressure": "Hypertension (High BP)"
+    weakness: "Weakness"
   };
 
   for (let key in map) {
@@ -673,6 +414,14 @@ function detectSeverity(msg) {
   if (msg.includes("mild")) return "mild";
   if (msg.includes("moderate")) return "moderate";
   if (msg.includes("high") || msg.includes("severe")) return "high";
+  return null;
+}
+
+function detectType(msg) {
+  if (msg.includes("viral")) return "viral";
+  if (msg.includes("bacterial")) return "bacterial";
+  if (msg.includes("parasitic")) return "parasitic";
+  if (msg.includes("unknown")) return "unknown";
   return null;
 }
 
@@ -740,59 +489,29 @@ function medicalReply(input) {
     return getEmergencyResponse();
   }
 
-  // Handle Greetings FIRST
-  if (detectGreeting(msg)) {
-    const history = chatMemory.getHistory();
-    const greeting = userName 
-      ? `Hello again, ${userName}! How can I help you today?` 
-      : `Hello! I am your virtual medical assistant. How can I help you today? (You can type your symptoms like "fever" or "headache")`;
-    return history ? greeting + "\n\n" + history : greeting;
-  }
-
-  // Ask for name IF missing, but ONLY when they provide a symptom
+  // Ask for name first
   if (!userName) {
-    if (!isAskingForName) {
-      // If user is saying "Yes" to a smart analysis
-      if (waitingForSmartConfirm && (msg === "yes" || msg === "y" || msg.includes("yes"))) {
-        const d = waitingForSmartConfirm;
-        waitingForSmartConfirm = null;
-        pendingDisease = d;
-        chatMemory.rememberDisease(d);
-        isAskingForName = true;
-        return `Okay! Before we generate the care plan for ${d}, could you please tell me your name for the medical report?`;
-      } else if (waitingForSmartConfirm) {
-        waitingForSmartConfirm = null; // They rejected it
-      }
-
-      // User typed something that is NOT a greeting. 
-      const smartResult = smartSymptomChecker(msg);
-      if (smartResult && !pendingDisease && !pendingSeverity) {
-        waitingForSmartConfirm = smartResult.topDisease;
-        // Do NOT set isAskingForName = true here! Just return the smart analysis.
-        return smartResult.reply;
-      }
-
-      const disease = detectDisease(msg);
-      if (disease) {
-        pendingDisease = disease;
-        chatMemory.rememberDisease(disease);
-        isAskingForName = true;
-        return `I can help you with ${disease}. But first, could you please tell me your name for the medical report?`;
-      }
-      
-      return "Please tell me your symptoms (like 'fever' or 'headache') so I can help.";
-    } else {
-      // User is providing their name
-      let name = input.trim();
-      if (name.toLowerCase().startsWith("my name is ")) name = name.substring(11).trim();
-      else if (name.toLowerCase().startsWith("i am ")) name = name.substring(5).trim();
-      else if (name.toLowerCase().startsWith("i'm ")) name = name.substring(4).trim();
-      
-      userName = name.charAt(0).toUpperCase() + name.slice(1);
-      isAskingForName = false;
-
-      return `Nice to meet you, ${userName}! Could you also tell me your age?`;
+    if (detectGreeting(msg)) {
+      const history = chatMemory.getHistory();
+      const welcome = "Hello! I am your medical support assistant. Could you please tell me your name?";
+      return history ? welcome + "\n\n" + history : welcome;
     }
+
+    const disease = detectDisease(msg);
+    if (disease && !pendingDisease) {
+      pendingDisease = disease;
+      chatMemory.rememberDisease(disease);
+      return `Before we proceed with ${disease}, could you please tell me your name for the medical report?`;
+    }
+
+    let name = input.trim();
+    if (name.toLowerCase().startsWith("my name is ")) name = name.substring(11).trim();
+    else if (name.toLowerCase().startsWith("i am ")) name = name.substring(5).trim();
+    else if (name.toLowerCase().startsWith("i'm ")) name = name.substring(4).trim();
+    
+    userName = name.charAt(0).toUpperCase() + name.slice(1);
+
+    return `Nice to meet you, ${userName}! Could you also tell me your age?`;
   }
 
   // Ask for age
@@ -833,11 +552,6 @@ function medicalReply(input) {
 
     if (pendingDisease) {
       const d = pendingDisease;
-      if (categoryDirect.includes(d)) {
-        pendingDisease = null;
-        hideAllSelections();
-        return `Thank you! Safety profile saved.\n\n` + medicinePlan(d, "general");
-      }
       showSeverityRow();
       return `Thank you! Safety profile saved. Let's continue with ${d}.\nStep 2: Choose severity below (Mild / moderate / high)`;
     }
@@ -850,13 +564,6 @@ function medicalReply(input) {
     if (msg === "yes" || msg === "y" || msg.includes("yes")) {
       let d = waitingForSmartConfirm;
       waitingForSmartConfirm = null;
-      chatMemory.rememberDisease(d);
-
-      if (categoryDirect.includes(d)) {
-        hideAllSelections();
-        return medicinePlan(d, "general");
-      }
-
       pendingDisease = d;
       pendingSeverity = null;
       showSeverityRow();
@@ -866,7 +573,12 @@ function medicalReply(input) {
     }
   }
 
-  // Greeting is handled at the top now
+  // Greeting - respond warmly
+  if (detectGreeting(msg)) {
+    const history = chatMemory.getHistory();
+    const greeting = `Hello again, ${userName}! I can help you with basic medicine guidance.\n\nHow to use:\n  1. Select a disease (Fever, Cold, Dengue...)\n  2. Choose severity (Mild / Moderate / High)\n  3. Choose type (Viral / Bacterial / Parasitic)\n\nI'll suggest basic tablets, home care tips, and warning signs.\n\nWhat are your symptoms today?`;
+    return history ? greeting + "\n\n" + history : greeting;
+  }
 
   // Farewell - respond nicely
   if (detectFarewell(msg)) {
@@ -885,21 +597,14 @@ function medicalReply(input) {
 
   const disease = detectDisease(msg);
   const severity = detectSeverity(msg);
+  const type = detectType(msg);
 
   // Step 1: User picks a disease
   if (disease) {
     clearChat();
-    chatMemory.rememberDisease(disease);
-
-    if (categoryDirect.includes(disease)) {
-      pendingDisease = null;
-      pendingSeverity = null;
-      hideAllSelections();
-      return medicinePlan(disease, "general");
-    }
-
     pendingDisease = disease;
     pendingSeverity = null;
+    chatMemory.rememberDisease(disease);
     showSeverityRow();
     return `Selected: ${disease}\nStep 2: Choose severity below (mild / moderate / high)`;
   }
@@ -907,12 +612,19 @@ function medicalReply(input) {
   // Step 2: User picks severity
   if (pendingDisease && !pendingSeverity) {
     if (!severity) return "Please choose severity (mild / moderate / high)";
-    
-    let d = pendingDisease;
+    pendingSeverity = severity;
+    showTypeRow();
+    return `Severity: ${severity}\nStep 3: Choose type below (viral / bacterial / parasitic / unknown)`;
+  }
+
+  // Step 3: User picks type - show result
+  if (pendingDisease && pendingSeverity) {
+    if (!type) return "Please choose type (viral / bacterial / parasitic / unknown)";
+    const result = medicinePlan(pendingDisease, pendingSeverity, type);
     pendingDisease = null;
     pendingSeverity = null;
     hideAllSelections();
-    return medicinePlan(d, severity);
+    return result;
   }
 
   return "Type disease name first (Fever, Cold, Dengue...)";
@@ -920,108 +632,34 @@ function medicalReply(input) {
 
 /* ---------------- EVENTS ---------------- */
 
-chatForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const value = userInput.value.trim();
-  if (!value) return;
 
-  addMessage("user", "You", value);
 
-  setTimeout(() => {
-    addMessage("assistant", "MediBot", medicalReply(value));
-  }, 400);
 
-  userInput.value = "";
-});
 
-quickButtons.forEach(btn => {
-  btn.onclick = () => {
-    const text = btn.dataset.prompt;
-    addMessage("user", "You", text);
-    setTimeout(() => {
-      addMessage("assistant", "MediBot", medicalReply(text));
-    }, 400);
-  };
-});
 
-selectionButtons.forEach(btn => {
-  btn.onclick = () => {
-    const text = btn.dataset.prompt;
-    addMessage("user", "You", text);
-    setTimeout(() => {
-      addMessage("assistant", "MediBot", medicalReply(text));
-    }, 400);
-  };
-});
 
 /* ---------------- ROBOT TOGGLE ---------------- */
 
-robotLauncher?.addEventListener("click", () => {
-  chatShell.classList.remove("hidden");
-  chatShell.classList.toggle("chat-closed");
-  if (reportShell && !reportShell.classList.contains("hidden")) {
-    reportShell.classList.add("hidden");
-  }
-});
 
-reportLauncher?.addEventListener("click", () => {
-  reportShell.classList.toggle("hidden");
-  if (!reportShell.classList.contains("hidden")) {
-    chatShell.classList.add("hidden");
-    chatShell.classList.add("chat-closed");
-  }
-});
-
-closeReportBtn?.addEventListener("click", () => {
-  reportShell.classList.add("hidden");
-});
-
-/* ---------------- REPORT BOT LOGIC ---------------- */
-reportForm?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  
-  if (!reportUpload.files.length) return;
-
-  const file = reportUpload.files[0];
-  const fileName = file.name;
-
-  // Add user message
-  const msg = document.createElement("article");
-  msg.className = "message user";
-  msg.innerHTML = `<h4>You</h4><p>📷 Uploaded: ${escapeHtml(fileName)}</p>`;
-  reportMessages.appendChild(msg);
-  reportMessages.scrollTop = reportMessages.scrollHeight;
-
-  // Simulate scanning
-  const loading = document.createElement("article");
-  loading.className = "message assistant";
-  loading.innerHTML = `<h4>Report Bot</h4><p>🔍 Scanning report using AI Vision...</p>`;
-  reportMessages.appendChild(loading);
-  reportMessages.scrollTop = reportMessages.scrollHeight;
-
-  setTimeout(() => {
-    loading.remove();
-    
-    // Fake Mock Analysis
-    const result = document.createElement("article");
-    result.className = "message assistant";
-    
-    result.innerHTML = `<h4>Report Bot</h4><p><b>📊 AI Analysis Complete</b><br><br>
-    I have extracted the following key metrics from your report:<br>
-    • 🩸 Hemoglobin (Hb): 9.2 g/dL <b>(LOW)</b><br>
-    • 🔬 Platelet Count: 250,000 <b>(Normal)</b><br>
-    • 🦠 WBC Count: 14,000 <b>(HIGH)</b><br><br>
-    <b>🧠 Diagnosis:</b> Anemia with possible mild infection.<br><br>
-    <b>💊 Suggestion:</b> You should take Iron supplements (e.g., Dexorange syrup) and consult a doctor to check the WBC count. Please eat iron-rich foods like spinach and beetroot.</p>`;
-    
-    reportMessages.appendChild(result);
-    reportMessages.scrollTop = reportMessages.scrollHeight;
-  }, 3000);
-  
-  reportForm.reset();
-});
 
 /* ---------------- FIX: HIDDEN CLASS ---------------- */
-const style = document.createElement("style");
-style.innerHTML = `.hidden{display:none}`;
-document.head.appendChild(style);
+
+document = { createElement: () => ({ classList: {} }) };
+
+console.log('--- TEST 1: Hii ---');
+console.log(medicalReply('hii'));
+
+console.log('--- TEST 2: Shiv ---');
+console.log(medicalReply('Shiv'));
+
+console.log('--- TEST 3: 25 ---');
+console.log(medicalReply('25'));
+
+console.log('--- TEST 4: None ---');
+console.log(medicalReply('None'));
+
+console.log('--- TEST 5: None ---');
+console.log(medicalReply('None'));
+
+console.log('--- TEST 6: fever ---');
+console.log(medicalReply('fever'));
