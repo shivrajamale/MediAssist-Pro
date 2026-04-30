@@ -2,8 +2,7 @@
   "name": "chatbot",
   "version": "1.0.0",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "local": "node api/server.js"
   },
   "dependencies": {}
 }
